@@ -39,7 +39,7 @@ public class FileWrite {
                     file.printf(template,tmp[3]);
                 }
             }
-            file.println();
+            //file.println();
         }catch (IOException exp){
             pw.println("Error!!!");
             pw.println("File writing handling problem!");

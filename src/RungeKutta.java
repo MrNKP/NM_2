@@ -121,12 +121,13 @@ class RungeKutta {
         // 2) Оценка погрешности по правилу Рунге
         // вычисление первого h/2 шага внутри второго шага
         eps = rungeRule(nextY, intMethod113(x + h/2, intMethod113(x, y, h/2), h/2));
+        if (eps < 1e-14) eps = 0;
         return nextY;
     }
 
     private void step() {
         y = runge();        // вычисление Yi+1, оценка погрешности по правилу Рунге
-        if (eps < epsmax)
+        if (eps > epsmax)
             wAccuracy++;
         x += h * direct();  // делаем шаг с учётом направления
         fileOut.write(3, x, y, eps, h); // выводим данные
@@ -184,7 +185,7 @@ class RungeKutta {
                     }
                     else { // если не удалось достичь точности
                         h = hmin; // устанавливаем мин шаг
-                        wAccuracy++; // прибавляем кол-во точек в которых не достигли точности
+                        //wAccuracy++; // прибавляем кол-во точек в которых не достигли точности
                         break;
                     }
 
@@ -192,9 +193,12 @@ class RungeKutta {
             if ((direction ? x-h-A : B-x-h) < hmin || x + h == x) // Если после текущего шага B-x будет < hmin
                 break;
 
+            /*
             y = runge();
             x += h * direct();  // делаем шаг с учётом направления
             fileOut.write(3, x, y, eps, h); // выводим данные
+            */
+            step();
 
             pointsCount++;
         }
