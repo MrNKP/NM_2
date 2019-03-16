@@ -121,7 +121,7 @@ class RungeKutta {
         // 2) Оценка погрешности по правилу Рунге
         // вычисление первого h/2 шага внутри второго шага
         eps = rungeRule(nextY, intMethod113(x + h/2, intMethod113(x, y, h/2), h/2));
-        if (eps < 1e-14) eps = 0;
+        //if (eps < 1e-14) eps = 0;
         return nextY;
     }
 
@@ -226,8 +226,8 @@ class RungeKutta {
         pointsCount++;
 
         fileOut.write("\n");
-        fileOut.write("Summary points count:   \t" + pointsCount);
-        fileOut.write("Accuracy is not obtained in: " + wAccuracy);
+        fileOut.write("Points count:   \t" + pointsCount);
+        fileOut.write("Accuracy bad in: \t" + wAccuracy);
     }
 }
 
