@@ -130,8 +130,8 @@ class RungeKutta {
         double nextY2 = intMethod113(x + h/2.0, intMethod113(x, y, h/2.0), h/2.0);
         eps = rungeRule(nextY, nextY2);
 
-        //if (eps < 1e-15) // ~ машинный эпсилон
-        //    eps = 0;
+        if (eps < 1e-14) // ~ машинный эпсилон
+            eps = 0;
 
         return nextY;
     }
@@ -237,7 +237,7 @@ class RungeKutta {
         pointsCount++;
 
         fileOut.write("\n");
-        fileOut.write("Summary points count:\t\t\t" + pointsCount);
-        fileOut.write("Accuracy is not obtained in:\t" + wAccuracy);
+        fileOut.write("Points count:\t\t" + pointsCount);
+        fileOut.write("Accuracy bad in:\t" + wAccuracy);
     }
 }
