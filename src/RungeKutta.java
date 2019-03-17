@@ -7,20 +7,20 @@ import static java.lang.Math.abs;
     Задание:
         Решение задачи Коши с заданной точностью с автоматическим
         выбором шага методом удвоения и деления шага пополам.
-
         Интегрирование обыкновенного дифференциального уравнения
             y' = f(x,y), x in [А,В]
         с начальным условием y(c)=yc,
         где точка cовпадает либо с началом,
         либо с концом отрезка интегрирования.
-
         Состав входного файла:
         1. A B x y
         2. hmin epsmax
+    Вариант: метод третьего порядка, оценка с помощью правила рунге.
  */
+
 class RungeKutta {
     private FileWrite fileOut;  // вывод данных в файл
-    private static final double mconst = 0.25; // 1/2^2
+    private static final double mconst = 0.75; // 1/2^2 - 1
     private int error;          // индикатор ошибки: 0 - ок, 1 - ошибка ввода
     private boolean direction;  // false - left-to-right, true - right-to-left
     private double h;           // текущий шаг интегрирования
@@ -31,6 +31,8 @@ class RungeKutta {
             eps,    // оценка погрешности на шаге
             epsmax; // наибольшая допустимая погрешность
     private int pointsCount, wAccuracy; // кол-во точек, кол-во точек в которых не достигли точности
+
+
 
     // вывод данных в консоль
     private <T> void write(T ...items) {
@@ -82,17 +84,20 @@ class RungeKutta {
     // примеры функций
     private static class functs{
         static double f1(double X, double Y) {
-            return 12*X; // 6*x^2
-        }
-        static double f2(double X, double Y) {
             return 1; // X
         }
+        static double f2(double X, double Y) {
+            return 12*X; // 6*X^2
+        }
         static double f3(double X, double Y) {
-            return 6; // X
+            return 4*3*X*X; // 4*X^3
+        }
+        static double f4(double X, double Y) {
+            return 9*4*X*X*X ; // + Y - X*X*X*X
         }
     }
     private double f(double X, double Y) {
-        return functs.f1(X, Y);    // ф-ия изменяется при необходимости
+        return functs.f2(X, Y);    // ф-ия изменяется при необходимости
     }
 
     // в зависимости от направления выдает -1(если справа налево) или 1(слева направо)
@@ -102,72 +107,84 @@ class RungeKutta {
 
     // Нахождение yi+1. Вычисление по формуле (110), метод 3-го порядка
     private double intMethod113(double X, double Y, double H) {
-        // TODO добавить вычисление при right-to-left direction
         double K1 = H*f(X, Y);
         double K2 = H*f(X + (1.0/2.0)*H, Y + (1.0/2.0)*K1);
-        return Y + K2*direct();
+        return Y + K2;
     }
 
     // Оценка погрешности по правилу Рунге
     private double rungeRule(double yh1, double yh2) {
-        return abs((yh1 - yh2)/(mconst - 1));
+        return abs((yh1 - yh2)/mconst);
     }
 
     // Вычисление Yi+1 + оценка погрешности
-    private double runge() {
+    private double runge(double h) {
         // 1) вычисление Yi+1
         double nextY = intMethod113(x, y, h); // вычисление yi+1
 
         // 2) Оценка погрешности по правилу Рунге
         // вычисление первого h/2 шага внутри второго шага
-        eps = rungeRule(nextY, intMethod113(x + h/2, intMethod113(x, y, h/2), h/2));
-        //if (eps < 1e-14) eps = 0;
+        double nextY2 = intMethod113(x + h/2.0, intMethod113(x, y, h/2.0), h/2.0);
+        eps = rungeRule(nextY, nextY2);
+
+        //if (eps < 1e-15) // ~ машинный эпсилон
+        //    eps = 0;
+
         return nextY;
     }
 
     private void step() {
-        y = runge();        // вычисление Yi+1, оценка погрешности по правилу Рунге
+        y = runge(h * direct());        // вычисление Yi+1, оценка погрешности по правилу Рунге
         if (eps > epsmax)
             wAccuracy++;
         x += h * direct();  // делаем шаг с учётом направления
-        fileOut.write(3, x, y, eps, h); // выводим данные
+        fileOut.write(15, x, y, eps, h * direct()); // выводим данные
     }
-    private void laststep() {
+    private void lastStep() {
         h = direction ? x - A : B - x;
         step();
     }
 
 
-
+    // основная функция
     public void start() {
         if (error == 1) {
             System.out.println("Ошибка ввода!");
             return;
         }
 
-        boolean lastdiv = false; // было ли последним действием деление шага
+        // Если необходимо - можно задать начальный шаг вручную
+        //h = 0.125;
 
-        //h = 0.81;    // искуственный шаг
+        // Подготовка файла
         fileOut.cleanFile();
-        fileOut.write("X\t\t\tY\t\t\tACC\t\t\tH");
-        fileOut.write(3, x, y, eps); // пишем первое граничное значение
+        fileOut.write("X\t\t\t\t\t\tY\t\t\t\t\t\tEPS\t\t\t\t\t\th");
+        fileOut.write(15, x, y, eps); // пишем первое граничное значение
+
         // Основной цикл
+        boolean lastdiv = false; // было ли последним действием деление шага
         while (true) {
 
             // автовыбор шага
-            runge();
-            if (eps <= epsmax/8)     // если точность слишком высокая
-                while (eps <= epsmax/8)
-                    // наибольший шаг взят условно, что бы сильно не "уплыло"
-                    // однако, возможно, это ограничение вовсе не нужно
-                    if (h * 2 <= hmax) {
+            int multiplyLimit = 0;
+            runge(h * direct());    // делаем оценку погрешности с заданным шагом
+            if (eps <= epsmax)       // если точность слишком высокая  (eps <= epsmax/8)
+                while (eps <= epsmax)         //(eps <= epsmax/8)
+                    if (h * 2 <= hmax) { // наибольший шаг взят условно, можно отключить
                         if (lastdiv) { // не допускаем умножения после деления
                             lastdiv = false;
                             break;
                         }
+                        if (multiplyLimit <= 5)
+                            multiplyLimit++;
+                        else  // если достигли предела для умножения
+                        {
+                            multiplyLimit = 0;
+                            break;
+                        }
                         h *= 2;
-                        runge();
-                        // если при умножении вышли за макс погрешность, то откатываемся
+                        runge(h * direct());
+                        // если при умножении вышли за макс погрешность, то возвращаемся назад
                         if (eps > epsmax) {
                             h /= 2;
                             break;
@@ -181,11 +198,10 @@ class RungeKutta {
                     if (h / 2 >= hmin) {
                         lastdiv = true;
                         h /= 2;
-                        runge();
+                        runge(h * direct());
                     }
                     else { // если не удалось достичь точности
                         h = hmin; // устанавливаем мин шаг
-                        //wAccuracy++; // прибавляем кол-во точек в которых не достигли точности
                         break;
                     }
 
@@ -193,41 +209,32 @@ class RungeKutta {
             if ((direction ? x-h-A : B-x-h) < hmin || x + h == x) // Если после текущего шага B-x будет < hmin
                 break;
 
-            /*
-            y = runge();
-            x += h * direct();  // делаем шаг с учётом направления
-            fileOut.write(3, x, y, eps, h); // выводим данные
-            */
             step();
 
             pointsCount++;
         }
-
-        // возможные проблемы с определением погрешности на границе
-        // могут быть связаны с сильно дробным шагом
 
         // обрабатываем состояние, когда находимся у конца отрезка
         // выбор направления - direction ? [справа налево] : [слева направо]
         if ((direction ? x-A : B-x) >= 2*hmin) { // если больше чем за 2 мин шага от края
             h = direction ? x - hmin - A : B - hmin - x;
             step();
-            laststep();
+            lastStep();
             pointsCount++;
         }
         else
         if ((direction ? x-A : B-x ) <= 1.5*hmin) // если меньше чем за 1.5 мин шага
-            laststep();
+            lastStep();
         else { // если 1.5*hmin < остаток(B-x) < 2*hmin
             h = direction ? (x-A)/2.0 : (B-x)/2.0;
             step();
-            laststep();
+            lastStep();
             pointsCount++;
         }
         pointsCount++;
 
         fileOut.write("\n");
-        fileOut.write("Points count:   \t" + pointsCount);
-        fileOut.write("Accuracy bad in: \t" + wAccuracy);
+        fileOut.write("Summary points count:   \t" + pointsCount);
+        fileOut.write("Accuracy is not obtained in: " + wAccuracy);
     }
 }
-
