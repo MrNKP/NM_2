@@ -95,9 +95,12 @@ class RungeKutta {
         static double f4(double X, double Y) {
             return 9*4*X*X*X ; // + Y - X*X*X*X
         }
+        static double f5(double X, double Y) {
+            return 24*X; //12*X^2
+        }
     }
     private double f(double X, double Y) {
-        return functs.f2(X, Y);    // ф-ия изменяется при необходимости
+        return functs.f5(X, Y);    // ф-ия изменяется при необходимости
     }
 
     // в зависимости от направления выдает -1(если справа налево) или 1(слева направо)
@@ -234,7 +237,7 @@ class RungeKutta {
         pointsCount++;
 
         fileOut.write("\n");
-        fileOut.write("Summary points count:   \t" + pointsCount);
-        fileOut.write("Accuracy is not obtained in: " + wAccuracy);
+        fileOut.write("Summary points count:\t\t\t" + pointsCount);
+        fileOut.write("Accuracy is not obtained in:\t" + wAccuracy);
     }
 }
