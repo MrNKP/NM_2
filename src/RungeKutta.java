@@ -158,6 +158,7 @@ class RungeKutta {
 
         // Если необходимо - можно задать начальный шаг вручную
         //h = 0.125;
+        h = 0.03125;
 
         // Подготовка файла
         fileOut.cleanFile();
@@ -171,9 +172,9 @@ class RungeKutta {
             // автовыбор шага
             int multiplyLimit = 0;
             runge(h * direct());    // делаем оценку погрешности с заданным шагом
-            if (eps <= epsmax)       // если точность слишком высокая  (eps <= epsmax/8)
-                while (eps <= epsmax)         //(eps <= epsmax/8)
-                    if (h * 2 <= hmax) { // наибольший шаг взят условно, можно отключить
+            if (eps <= epsmax/4)       // если точность слишком высокая
+                while (eps <= epsmax/4)
+                    if (h * 2 <= hmax*400) { // наибольший шаг взят условно, можно отключить
                         if (lastdiv) { // не допускаем умножения после деления
                             lastdiv = false;
                             break;
